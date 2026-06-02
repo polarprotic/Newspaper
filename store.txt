@@ -140,7 +140,7 @@ torch.save(model.state_dict(), f"newspaper_classifier_{epochs_count}.pt")
 
 
 
-
+#BEST TILL NOW
 
 
 
