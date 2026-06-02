@@ -52,7 +52,23 @@ for epoch in range(epochs_count):
         optimizer.step()
     print(f"Epoch {epoch+1} done")
 
-torch.save(model.state_dict(), f"newspaper_classifier_{epochs_count}.pt")
+torch.save(model.state_dict(), f"newspaper_classifier_1st_best.pt")
+
+Overall Accuracy: 93.98%
+Predictions saved in: Dataset/Predictions
+
+--- Confusion Matrix ---
+Actual \ Pred      Article Classified    Display
+------------------------------------------------
+Article               1700         33         14
+Classified              56        255         15
+Display                 11          3        107
+
+--- Per-Class Accuracy ---
+Article        : 97.31% (1700/1747)
+Classified     : 78.22% (255/326)
+Display        : 88.43% (107/121)
+PS C:\Testing\classifier_training\Train_classifier> 
 
 
 
@@ -131,6 +147,24 @@ torch.save(model.state_dict(), f"newspaper_classifier_{epochs_count}.pt")
 
 
 
+Overall Accuracy: 88.83%
+Predictions saved in: Dataset/Predictions
+
+--- Confusion Matrix ---
+Actual \ Pred      Article Classified    Display
+------------------------------------------------
+Article               1553        112         82
+Classified              17        276         33
+Display                  0          1        120
+
+--- Per-Class Accuracy ---
+Article        : 88.90% (1553/1747)
+Classified     : 84.66% (276/326)
+Display        : 99.17% (120/121)
+PS C:\Testing\classifier_training\Train_classifier> 
+
+
+
 
 
 
@@ -141,10 +175,6 @@ torch.save(model.state_dict(), f"newspaper_classifier_{epochs_count}.pt")
 
 
 #BEST TILL NOW
-
-
-
-
 
 
 
@@ -310,7 +340,21 @@ for epoch in range(epochs_count):
             break
 
 
+Overall Accuracy: 92.94%
+Predictions saved in: Dataset/Predictions
 
+--- Confusion Matrix ---
+Actual \ Pred      Article Classified    Display
+------------------------------------------------
+Article               1656         61         30
+Classified              39        272         15
+Display                  6          4        111
+
+--- Per-Class Accuracy ---
+Article        : 94.79% (1656/1747)
+Classified     : 83.44% (272/326)
+Display        : 91.74% (111/121)
+PS C:\Testing\classifier_training\Train_classifier> 
 
 
 
