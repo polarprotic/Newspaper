@@ -22,7 +22,7 @@ val_data = datasets.ImageFolder(
 
 val_loader = torch.utils.data.DataLoader(
     val_data,
-    batch_size=1,      # Important: process one image at a time
+    batch_size=1,
     shuffle=False
 )
 
@@ -35,13 +35,13 @@ print("Classes:", class_names)
 model = models.efficientnet_b0(weights=None)
 model.classifier[1] = nn.Linear(
     model.classifier[1].in_features,
-    num_classes # Dynamically use the length of your classes list
+    num_classes
 )
 
 # Load your model weights
 model.load_state_dict(
     torch.load(
-        "newspaper_classifier_10.pt", # Note: Update this to "best_newspaper_classifier.pt" if you used the checkpointing script!
+        "newspaper_classifier_3_best_again.pt",
         map_location="cpu"
     )
 )
@@ -49,13 +49,13 @@ model.load_state_dict(
 model.eval()
 
 # Create output folders
-output_root = "Dataset/Predictions"
+true_root = "Dataset/Predictions_True"
+false_root = "Dataset/Predictions_False"
 
+# Create subfolders for each class in both directories
 for cls in class_names:
-    os.makedirs(
-        os.path.join(output_root, cls),
-        exist_ok=True
-    )
+    os.makedirs(os.path.join(true_root, cls), exist_ok=True)
+    os.makedirs(os.path.join(false_root, cls), exist_ok=True)
 
 correct = 0
 total = 0
@@ -65,56 +65,78 @@ conf_matrix = torch.zeros(num_classes, num_classes, dtype=torch.int32)
 
 with torch.no_grad():
     for idx, (image, label) in enumerate(val_loader):
+
         output = model(image)
         _, pred = torch.max(output, 1)
 
         total += 1
 
+        # Track correct predictions for metrics
         if pred.item() == label.item():
             correct += 1
-            
-        # Update confusion matrix: row = actual label, column = predicted label
+
+        # Update confusion matrix
         conf_matrix[label.item(), pred.item()] += 1
 
-        # Original image path
+        # Original image path and class names
         image_path = val_data.samples[idx][0]
+        actual_class = class_names[label.item()]
         predicted_class = class_names[pred.item()]
 
-        destination = os.path.join(
-            output_root,
-            predicted_class,
-            os.path.basename(image_path)
-        )
-
-        shutil.copy2(image_path, destination)
+        # ==========================================
+        # SORTING LOGIC: TRUE vs FALSE PREDICTIONS
+        # ==========================================
+        if pred.item() == label.item():
+            # If CORRECT: Save to Predictions_True in the correct class folder
+            true_destination = os.path.join(
+                true_root,
+                actual_class, 
+                os.path.basename(image_path)
+            )
+            shutil.copy2(image_path, true_destination)
+            
+        else:
+            # If INCORRECT: Save to Predictions_False in the WRONG predicted class folder, 
+            # renaming the file to show what it was actually supposed to be.
+            false_destination = os.path.join(
+                false_root,
+                predicted_class,
+                f"actual_{actual_class}__{os.path.basename(image_path)}"
+            )
+            shutil.copy2(image_path, false_destination)
 
 accuracy = 100 * correct / total
 
 # --- PRINT FINAL METRICS ---
 
 print(f"\nOverall Accuracy: {accuracy:.2f}%")
-print(f"Predictions saved in: {output_root}\n")
+print(f"Correct predictions saved in: {true_root}")
+print(f"Incorrect predictions saved in: {false_root}\n")
 
 print("--- Confusion Matrix ---")
-# Print a clean, formatted table for the matrix
-header = f"{'Actual \\ Pred':<15} " + " ".join([f"{name:>10}" for name in class_names])
+
+header = f"{'Actual \\ Pred':<15} " + " ".join(
+    [f"{name:>10}" for name in class_names]
+)
+
 print(header)
 print("-" * len(header))
 
 for i, actual_class in enumerate(class_names):
     row_str = f"{actual_class:<15} "
-    row_str += " ".join([f"{val.item():>10}" for val in conf_matrix[i]])
+    row_str += " ".join(
+        [f"{val.item():>10}" for val in conf_matrix[i]]
+    )
     print(row_str)
 
 print("\n--- Per-Class Accuracy ---")
-# The diagonal of the matrix contains correct predictions
+
 class_correct = conf_matrix.diag()
-# The sum of each row represents the total actual instances of that class
 class_totals = conf_matrix.sum(dim=1)
 
 for i in range(num_classes):
     if class_totals[i] > 0:
-        class_acc = 100 * class_correct[i].item() / class_totals[i].item()
+        class_acc = (100 * class_correct[i].item() / class_totals[i].item())
         print(f"{class_names[i]:<15}: {class_acc:.2f}% ({class_correct[i]}/{class_totals[i]})")
     else:
         print(f"{class_names[i]:<15}: No samples in validation set")
